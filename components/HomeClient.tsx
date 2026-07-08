@@ -20,7 +20,7 @@ export default function HomeClient({ venues }: { venues: VenueWithWeddings[] }) 
   const selectedVenue = venues.find(v => v.id === selectedVenueId) || null;
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-gray-950 text-white">
+    <div className="flex h-screen w-screen overflow-hidden bg-white dark:bg-gray-950 text-black dark:text-white">
       <Sidebar 
         venues={filteredVenues}
         selectedDistrict={selectedDistrict}
@@ -38,10 +38,10 @@ export default function HomeClient({ venues }: { venues: VenueWithWeddings[] }) 
         />
         
         <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none">
-          <h1 className="text-white/90 text-2xl font-semibold tracking-wide drop-shadow-md bg-black/40 px-6 py-2 rounded-full backdrop-blur-md border border-white/10">
+          <h1 className="text-gray-900 dark:text-white/90 text-2xl font-semibold tracking-wide drop-shadow-md bg-white/80 dark:bg-black/40 px-6 py-2 rounded-full backdrop-blur-md border border-gray-200 dark:border-white/10 shadow-sm dark:shadow-none">
             Kalyanam
           </h1>
-          <p className="text-white/50 text-xs text-center mt-1 bg-black/50 rounded-full px-2">
+          <p className="text-gray-600 dark:text-white/50 text-xs text-center mt-1 bg-white/80 dark:bg-black/50 rounded-full px-2 shadow-sm dark:shadow-none">
             {filteredVenues.length} venues found
           </p>
         </div>

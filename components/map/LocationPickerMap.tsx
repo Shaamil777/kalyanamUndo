@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useTheme } from 'next-themes';
 
 
 // @ts-ignore
@@ -39,20 +40,25 @@ function MapController({ position }: { position: [number, number] }) {
 interface LocationPickerMapProps {
   position: [number, number];
   onPositionChange: (lat: number, lng: number) => void;
+  initialPosition?: [number, number];
 }
 
-export default function LocationPickerMap({ position, onPositionChange }: LocationPickerMapProps) {
+export default function LocationPickerMap({ position, onPositionChange, initialPosition }: LocationPickerMapProps) {
+  const { resolvedTheme } = useTheme();
+  
   return (
-    <div className="w-full h-full relative z-0 bg-[#0a0a0a] rounded-lg overflow-hidden border border-white/10">
+    <div className="w-full h-full relative z-0 bg-gray-100 dark:bg-[#0a0a0a] rounded-lg overflow-hidden border border-gray-200 dark:border-white/10">
       <MapContainer 
         center={position} 
         zoom={13} 
-        style={{ height: '100%', width: '100%', background: '#0a0a0a' }}
+        style={{ height: '100%', width: '100%', background: 'transparent' }}
         scrollWheelZoom={true}
       >
         <TileLayer
           attribution='&copy; <a href="https://carto.com/">Carto</a> | Data &copy; <a href="https://osm.org">OpenStreetMap</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          url={resolvedTheme === 'light' 
+            ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" 
+            : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"}
         />
         
         <MapController position={position} />

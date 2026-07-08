@@ -2,7 +2,7 @@ import { Venue, Wedding } from '@/lib/generated/prisma/client';
 
 export type VenueWithWeddings = Venue & { weddings: Wedding[] };
 
-export type WeddingStatus = 'live' | 'upcoming' | 'none';
+export type WeddingStatus = 'live' | 'none';
 
 export function getWeddingStatus(venue: VenueWithWeddings): { status: WeddingStatus, activeWedding?: Wedding } {
   if (!venue.weddings || venue.weddings.length === 0) {
@@ -29,25 +29,6 @@ export function getWeddingStatus(venue: VenueWithWeddings): { status: WeddingSta
 
   if (liveWedding) {
     return { status: 'live', activeWedding: liveWedding };
-  }
-
-  // Find upcoming wedding (future dates, or today but future time)
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  
-  const upcomingWeddings = venue.weddings.filter(w => {
-    const wDate = new Date(w.date.getFullYear(), w.date.getMonth(), w.date.getDate());
-    if (wDate > today) return true;
-    if (wDate.getTime() === today.getTime()) {
-        const start = new Date(w.startTime);
-        return now.toTimeString().split(' ')[0] < start.toTimeString().split(' ')[0];
-    }
-    return false;
-  });
-
-  if (upcomingWeddings.length > 0) {
-    // Return the soonest upcoming
-    upcomingWeddings.sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-    return { status: 'upcoming', activeWedding: upcomingWeddings[0] };
   }
 
   return { status: 'none' };
