@@ -1,0 +1,50 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Venue {
+  id         String    @id @default(cuid())
+
+  name       String
+  district   String
+  address    String?
+  googleMapsUrl String?
+
+  latitude   Float
+  longitude  Float
+
+  weddings   Wedding[]
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+model Wedding {
+  id         String    @id @default(cuid())
+
+  brideName  String
+  groomName  String
+
+  date       DateTime
+
+  startTime  DateTime
+  endTime    DateTime?
+
+  food       String?
+
+  venueId    String
+  venue      Venue     @relation(fields: [venueId], references: [id])
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
