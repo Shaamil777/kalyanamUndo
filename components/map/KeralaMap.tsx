@@ -7,17 +7,18 @@ import 'leaflet/dist/leaflet.css';
 import { VenueWithWeddings, getWeddingStatus } from '@/lib/weddingStatus';
 import { useTheme } from 'next-themes';
 
-function MapController({ selectedVenue }: { selectedVenue: VenueWithWeddings | null }) {
+function MapController({ selectedVenue, districtStats }: { selectedVenue: VenueWithWeddings | null, districtStats: Record<string, { lat: number; lng: number }> }) {
   const map = useMap();
   
   useEffect(() => {
-    if (selectedVenue) {
-      map.flyTo([selectedVenue.latitude, selectedVenue.longitude], 14, {
+    if (selectedVenue && districtStats[selectedVenue.district]) {
+      const dist = districtStats[selectedVenue.district];
+      map.flyTo([dist.lat, dist.lng], 10, {
         duration: 1.5,
         easeLinearity: 0.25
       });
     }
-  }, [selectedVenue, map]);
+  }, [selectedVenue, districtStats, map]);
 
   return null;
 }
@@ -40,9 +41,10 @@ interface KeralaMapProps {
   venues: VenueWithWeddings[];
   selectedVenueId: string | null;
   onMarkerClick: (id: string) => void;
+  onDistrictClick: (district: string) => void;
 }
 
-export default function KeralaMap({ venues, selectedVenueId, onMarkerClick }: KeralaMapProps) {
+export default function KeralaMap({ venues, selectedVenueId, onMarkerClick, onDistrictClick }: KeralaMapProps) {
   const initialCenter: [number, number] = [10.8505, 76.2711];
   const [zoomLevel, setZoomLevel] = useState(8);
   const { resolvedTheme } = useTheme();
@@ -87,10 +89,13 @@ export default function KeralaMap({ venues, selectedVenueId, onMarkerClick }: Ke
     return stats;
   }, [venues]);
 
-  const createSummaryIcon = (title: string, venuesCount: number, liveCount: number, availCount: number) => {
+  const createSummaryIcon = (title: string, venuesCount: number, liveCount: number, availCount: number, isDistrict: boolean = false) => {
     const html = `
-      <div class="bg-gray-900/95 backdrop-blur-md border border-gray-700 p-3 rounded-xl shadow-2xl whitespace-nowrap min-w-[160px] transform -translate-x-1/2 -translate-y-1/2 transition-all">
-        <h3 class="text-white font-semibold text-[13px] tracking-wide border-b border-gray-700 pb-2 mb-2">${title}</h3>
+      <div class="bg-gray-900/95 backdrop-blur-md border border-gray-700 p-3 rounded-xl shadow-2xl whitespace-nowrap min-w-[160px] transform -translate-x-1/2 -translate-y-1/2 transition-all hover:scale-105 hover:border-teal-500 cursor-pointer">
+        <h3 class="text-white font-semibold text-[13px] tracking-wide border-b border-gray-700 pb-2 mb-2 flex items-center justify-between">
+          ${title}
+          ${isDistrict ? '<span class="text-[10px] text-gray-500 font-normal">Click to view</span>' : ''}
+        </h3>
         <div class="space-y-1.5 text-xs">
           <div class="flex justify-between gap-4"><span class="text-gray-400">Total Venues:</span> <span class="text-white font-medium">${venuesCount}</span></div>
           <div class="flex justify-between gap-4"><span class="text-emerald-400">Program Venue:</span> <span class="text-white font-medium">${liveCount}</span></div>
@@ -123,51 +128,30 @@ export default function KeralaMap({ venues, selectedVenueId, onMarkerClick }: Ke
             : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"}
         />
         
-        <MapController selectedVenue={selectedVenue} />
+        <MapController selectedVenue={selectedVenue} districtStats={districtStats} />
         <ZoomTracker onZoomChange={setZoomLevel} />
 
         {zoomLevel <= 7 && (
           <Marker 
             position={initialCenter}
-            icon={createSummaryIcon('Kerala Summary', venues.length, totalLive, totalAvailable)}
+            icon={createSummaryIcon('Kerala Summary', venues.length, totalLive, totalAvailable, false)}
           />
         )}
 
-        {zoomLevel > 7 && zoomLevel <= 10 && (
+        {zoomLevel > 7 && (
           Object.entries(districtStats).map(([district, stat]) => (
             <Marker 
               key={district}
               position={[stat.lat, stat.lng]}
-              icon={createSummaryIcon(district, stat.count, stat.live, stat.avail)}
+              icon={createSummaryIcon(district, stat.count, stat.live, stat.avail, true)}
+              eventHandlers={{
+                click: () => onDistrictClick(district),
+              }}
             />
           ))
         )}
 
-        {zoomLevel > 10 && (
-          venues.map((venue) => {
-            const { status } = getWeddingStatus(venue);
-            
-            let color = '#4b5563';
-            if (status === 'live') color = '#10b981';
 
-            return (
-              <CircleMarker 
-                key={venue.id}
-                center={[venue.latitude, venue.longitude]}
-                pathOptions={{ 
-                  color: color, 
-                  fillColor: color, 
-                  fillOpacity: 0.8, 
-                  weight: 2 
-                }}
-                radius={8}
-                eventHandlers={{
-                  click: () => onMarkerClick(venue.id),
-                }}
-              />
-            );
-          })
-        )}
       </MapContainer>
     </div>
   );

@@ -17,6 +17,33 @@ export default function HomeClient({ venues }: { venues: VenueWithWeddings[] }) 
     return matchesDistrict && matchesSearch;
   });
 
+  const mapVenues = venues.filter(v => v.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  let programmedCount = 0;
+  filteredVenues.forEach(v => {
+    const hasActiveWedding = v.weddings?.some(wedding => {
+      const now = new Date();
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const weddingDate = new Date(wedding.date);
+      weddingDate.setHours(0, 0, 0, 0);
+      
+      if (weddingDate.getTime() < today.getTime()) return false;
+      
+      if (weddingDate.getTime() === today.getTime()) {
+        const end = wedding.endTime ? new Date(wedding.endTime) : null;
+        const nowTimeStr = now.toTimeString().split(' ')[0];
+        const endTimeStr = end ? end.toTimeString().split(' ')[0] : '23:59:59';
+        if (nowTimeStr > endTimeStr) return false;
+      }
+      return true;
+    });
+
+    if (hasActiveWedding) {
+      programmedCount++;
+    }
+  });
+
   const selectedVenue = venues.find(v => v.id === selectedVenueId) || null;
 
   return (
@@ -32,18 +59,29 @@ export default function HomeClient({ venues }: { venues: VenueWithWeddings[] }) 
 
       <div className="flex-1 relative">
         <MapWrapper 
-          venues={filteredVenues} 
+          venues={mapVenues} 
           selectedVenueId={selectedVenueId}
           onMarkerClick={(id) => setSelectedVenueId(id)}
+          onDistrictClick={(district) => setSelectedDistrict(district)}
         />
         
-        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none">
-          <h1 className="text-gray-900 dark:text-white/90 text-2xl font-semibold tracking-wide drop-shadow-md bg-white/80 dark:bg-black/40 px-6 py-2 rounded-full backdrop-blur-md border border-gray-200 dark:border-white/10 shadow-sm dark:shadow-none">
-            Kalyanam
-          </h1>
-          <p className="text-gray-600 dark:text-white/50 text-xs text-center mt-1 bg-white/80 dark:bg-black/50 rounded-full px-2 shadow-sm dark:shadow-none">
-            {filteredVenues.length} venues found
-          </p>
+        <div className="absolute top-8 left-1/2 -translate-x-1/2 z-[1000] pointer-events-none flex flex-col items-center">
+          <div className="bg-white/90 dark:bg-[#111]/80 backdrop-blur-xl border border-white/20 dark:border-gray-800/80 px-6 py-2.5 rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.5)] flex items-center gap-6">
+            <div className="flex items-center">
+              <img src="/images/logo.png" alt="Kalyanam Undo" className="h-14 w-auto object-contain" />
+            </div>
+            <div className="w-px h-6 bg-gray-200 dark:bg-gray-800"></div>
+            <div className="flex items-center gap-6">
+              <div className="flex flex-col items-center">
+                <span className="text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500 font-bold mb-0.5">Total Venues</span>
+                <span className="text-gray-900 dark:text-white text-sm font-bold leading-none">{filteredVenues.length}</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-[10px] uppercase tracking-widest text-teal-600 dark:text-teal-600 font-bold mb-0.5">Scheduled</span>
+                <span className="text-teal-600 dark:text-teal-400 text-sm font-bold leading-none">{programmedCount}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
