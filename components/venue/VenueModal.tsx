@@ -2,19 +2,34 @@
 
 import { useState } from 'react';
 import { VenueWithWeddings, getWeddingStatus } from '@/lib/weddingStatus';
-import { MapPin, Navigation, Calendar, Clock, Utensils, X, Plus, Trash2 } from 'lucide-react';
-import AddWeddingModal from './wedding/AddWeddingModal';
+import { MapPin, Navigation, Calendar, Clock, Utensils, X, Plus, Trash2, Edit2 } from 'lucide-react';
+import AddWeddingModal from '../wedding/AddWeddingModal';
+import EditVenueModal from './EditVenueModal';
 import { deleteWedding } from '@/actions/wedding';
+import { deleteVenue } from '@/actions/venue';
+import { useRouter } from 'next/navigation';
 
 interface VenueModalProps {
   venue: VenueWithWeddings;
   onClose: () => void;
+  currentUserId: string | null;
 }
 
-export default function VenueModal({ venue, onClose }: VenueModalProps) {
+export default function VenueModal({ venue, onClose, currentUserId }: VenueModalProps) {
   const { status, activeWedding } = getWeddingStatus(venue);
   const [showAddWedding, setShowAddWedding] = useState(false);
+  const [showEditVenue, setShowEditVenue] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeletingVenue, setIsDeletingVenue] = useState(false);
+  const router = useRouter();
+
+  const handleAddProgram = () => {
+    if (!currentUserId) {
+      router.push('/login');
+      return;
+    }
+    setShowAddWedding(true);
+  };
 
   const handleDelete = async () => {
     if (!activeWedding || isDeleting) return;
@@ -31,20 +46,57 @@ export default function VenueModal({ venue, onClose }: VenueModalProps) {
     }
   };
 
+  const handleDeleteVenue = async () => {
+    if (!confirm('Are you sure you want to delete this venue? All programs in this venue will also be deleted.')) {
+      return;
+    }
+    setIsDeletingVenue(true);
+    try {
+      await deleteVenue(venue.id);
+      onClose(); // Close the modal since the venue is gone
+    } catch (error) {
+      console.error(error);
+      alert('Failed to delete venue');
+    } finally {
+      setIsDeletingVenue(false);
+    }
+  };
+
   return (
     <>
       <div className="absolute right-6 top-6 bottom-6 w-96 bg-white/95 dark:bg-[#111]/95 backdrop-blur-xl border border-gray-200 dark:border-gray-800/80 rounded-[2rem] shadow-[0_8px_40px_rgba(0,0,0,0.12)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.6)] flex flex-col z-[1001] animate-in slide-in-from-right-8 duration-300 overflow-hidden">
         
         {/* Header */}
         <div className="p-8 border-b border-gray-200 dark:border-gray-800/60 relative bg-gradient-to-b from-gray-50/50 to-white/50 dark:from-[#151515] dark:to-[#111] backdrop-blur-md">
-          <button 
-            onClick={onClose}
-            className="absolute top-6 right-6 p-2 bg-gray-100 dark:bg-gray-800/50 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-          >
-            <X size={18} />
-          </button>
+          <div className="absolute top-6 right-6 flex gap-2">
+            {currentUserId === venue.userId && (
+              <>
+                <button 
+                  onClick={() => setShowEditVenue(true)}
+                  className="p-2 bg-gray-100 dark:bg-gray-800/50 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full text-gray-500 dark:text-gray-400 hover:text-teal-600 dark:hover:text-teal-400 transition-colors"
+                  title="Edit Venue"
+                >
+                  <Edit2 size={16} />
+                </button>
+                <button 
+                  onClick={handleDeleteVenue}
+                  disabled={isDeletingVenue}
+                  className="p-2 bg-gray-100 dark:bg-gray-800/50 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-full text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors disabled:opacity-50"
+                  title="Delete Venue"
+                >
+                  {isDeletingVenue ? <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div> : <Trash2 size={16} />}
+                </button>
+              </>
+            )}
+            <button 
+              onClick={onClose}
+              className="p-2 bg-gray-100 dark:bg-gray-800/50 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            >
+              <X size={18} />
+            </button>
+          </div>
           
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white pr-10 leading-tight mb-2">{venue.name}</h2>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white pr-24 leading-tight mb-2">{venue.name}</h2>
           <div className="flex items-center gap-2 mt-3 text-[13px] font-medium text-gray-500 dark:text-gray-400">
             <MapPin size={16} className="text-teal-500" />
             {venue.district}
@@ -127,25 +179,27 @@ export default function VenueModal({ venue, onClose }: VenueModalProps) {
                           </div>
                         )}
                         
-                        <button
-                          onClick={async () => {
-                            if (isDeleting) return;
-                            setIsDeleting(true);
-                            try {
-                              await deleteWedding(wedding.id);
-                            } catch (error) {
-                              console.error(error);
-                              alert('Failed to delete program');
-                            } finally {
-                              setIsDeleting(false);
-                            }
-                          }}
-                          disabled={isDeleting}
-                          className="text-gray-400 hover:text-red-500 bg-gray-50 hover:bg-red-50 dark:bg-[#1a1a1a] dark:hover:bg-red-900/20 p-2 rounded-xl transition-all disabled:opacity-50 opacity-0 group-hover:opacity-100 border border-transparent dark:border-gray-800/50"
-                          title="Remove Program"
-                        >
-                          {isDeleting ? <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div> : <Trash2 size={16} />}
-                        </button>
+                        {currentUserId === wedding.userId && (
+                          <button
+                            onClick={async () => {
+                              if (isDeleting) return;
+                              setIsDeleting(true);
+                              try {
+                                await deleteWedding(wedding.id);
+                              } catch (error) {
+                                console.error(error);
+                                alert('Failed to delete program');
+                              } finally {
+                                setIsDeleting(false);
+                              }
+                            }}
+                            disabled={isDeleting}
+                            className="text-gray-400 hover:text-red-500 bg-gray-50 hover:bg-red-50 dark:bg-[#1a1a1a] dark:hover:bg-red-900/20 p-2 rounded-xl transition-all disabled:opacity-50 opacity-0 group-hover:opacity-100 border border-transparent dark:border-gray-800/50"
+                            title="Remove Program"
+                          >
+                            {isDeleting ? <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin"></div> : <Trash2 size={16} />}
+                          </button>
+                        )}
                       </div>
 
                       <div className="text-center py-6 bg-white dark:bg-[#151515] rounded-2xl border border-gray-100 dark:border-gray-800/80 shadow-sm relative overflow-hidden">
@@ -192,7 +246,7 @@ export default function VenueModal({ venue, onClose }: VenueModalProps) {
                 })}
               
               <button 
-                onClick={() => setShowAddWedding(true)}
+                onClick={handleAddProgram}
                 className="w-full mt-6 bg-gray-100 dark:bg-[#1a1a1a] hover:bg-gray-200 dark:hover:bg-[#252525] text-gray-900 dark:text-white font-bold py-3.5 px-6 rounded-xl transition-all flex items-center justify-center gap-2 border border-transparent dark:border-gray-800/50 shadow-sm active:scale-95"
               >
                 <Plus size={18} />
@@ -209,7 +263,7 @@ export default function VenueModal({ venue, onClose }: VenueModalProps) {
                 <p className="text-[13px] text-gray-500 mt-2 max-w-[200px] mx-auto leading-relaxed">There are currently no weddings scheduled at this venue.</p>
               </div>
               <button 
-                onClick={() => setShowAddWedding(true)}
+                onClick={handleAddProgram}
                 className="mt-6 bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-500 hover:to-teal-400 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-teal-500/25 transition-all flex items-center gap-2 active:scale-95"
               >
                 <Plus size={18} />
@@ -223,6 +277,10 @@ export default function VenueModal({ venue, onClose }: VenueModalProps) {
 
       {showAddWedding && (
         <AddWeddingModal venueId={venue.id} onClose={() => setShowAddWedding(false)} />
+      )}
+      
+      {showEditVenue && (
+        <EditVenueModal venue={venue} onClose={() => setShowEditVenue(false)} />
       )}
     </>
   );

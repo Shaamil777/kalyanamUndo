@@ -1,15 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { VenueWithWeddings, getWeddingStatus } from '@/lib/weddingStatus';
 import Sidebar from './ui/Sidebar';
 import MapWrapper from './map/MapWrapper';
-import VenueModal from './VenueModal';
+import VenueModal from './venue/VenueModal';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
-export default function HomeClient({ venues }: { venues: VenueWithWeddings[] }) {
+export default function HomeClient({ venues, currentUserId }: { venues: VenueWithWeddings[], currentUserId: string | null }) {
   const [selectedDistrict, setSelectedDistrict] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedVenueId, setSelectedVenueId] = useState<string | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get('login') === 'success') {
+        toast.success('Successfully logged in!', {
+          style: { background: '#10b981', color: 'white', border: 'none' }
+        });
+        url.searchParams.delete('login');
+        window.history.replaceState({}, '', url.toString());
+      }
+    }
+  }, []);
 
   const filteredVenues = venues.filter(v => {
     const matchesDistrict = selectedDistrict === 'All' || v.district === selectedDistrict;
@@ -55,6 +71,7 @@ export default function HomeClient({ venues }: { venues: VenueWithWeddings[] }) 
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         onSelectVenue={(id) => setSelectedVenueId(id)}
+        currentUserId={currentUserId}
       />
 
       <div className="flex-1 relative">
@@ -88,7 +105,8 @@ export default function HomeClient({ venues }: { venues: VenueWithWeddings[] }) 
       {selectedVenue && (
         <VenueModal 
           venue={selectedVenue} 
-          onClose={() => setSelectedVenueId(null)} 
+          onClose={() => setSelectedVenueId(null)}
+          currentUserId={currentUserId}
         />
       )}
     </div>

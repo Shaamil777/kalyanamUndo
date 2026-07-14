@@ -12,6 +12,18 @@ datasource db {
   provider = "postgresql"
 }
 
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  password      String?
+  venues        Venue[]
+  weddings      Wedding[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
 model Venue {
   id         String    @id @default(cuid())
 
@@ -23,6 +35,9 @@ model Venue {
 
   latitude   Float
   longitude  Float
+
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   weddings   Wedding[]
 
@@ -44,7 +59,10 @@ model Wedding {
   food       String?
 
   venueId    String
-  venue      Venue     @relation(fields: [venueId], references: [id])
+  venue      Venue     @relation(fields: [venueId], references: [id], onDelete: Cascade)
+
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt

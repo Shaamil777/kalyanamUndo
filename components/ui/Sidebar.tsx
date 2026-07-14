@@ -10,6 +10,7 @@ interface SidebarProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   onSelectVenue: (id: string) => void;
+  currentUserId: string | null;
 }
 
 const DISTRICTS = [
@@ -24,7 +25,8 @@ export default function Sidebar({
   setSelectedDistrict,
   searchQuery,
   setSearchQuery,
-  onSelectVenue
+  onSelectVenue,
+  currentUserId
 }: SidebarProps) {
   const { theme, setTheme } = useTheme();
 
@@ -120,15 +122,61 @@ export default function Sidebar({
         )}
       </div>
 
-      <div className="p-5 border-t border-gray-200 dark:border-gray-800/60 flex justify-between items-center bg-white/50 dark:bg-black/20 backdrop-blur-md">
-        <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Appearance</span>
-        <button
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#252525] hover:text-gray-900 dark:hover:text-white transition-all shadow-sm border border-transparent dark:border-gray-800/50 active:scale-95"
-        >
-          {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-          <span className="text-[11px] font-bold uppercase tracking-wider">{theme === 'dark' ? 'Light' : 'Dark'}</span>
-        </button>
+      <div className="p-5 border-t border-gray-200 dark:border-gray-800/60 flex flex-col gap-4 bg-white/50 dark:bg-black/20 backdrop-blur-md">
+        <div className="flex justify-between items-center">
+          <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest ml-1">Account</span>
+          
+          <div className="flex gap-2">
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 dark:bg-[#1a1a1a] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#252525] hover:text-gray-900 dark:hover:text-white transition-all shadow-sm border border-transparent dark:border-gray-800/50 active:scale-95"
+              title="Toggle theme"
+            >
+              {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
+            </button>
+            
+            {currentUserId ? (
+              <form action={async () => { 
+                const { logout } = await import('@/actions/auth'); 
+                await logout(); 
+              }}>
+                <button
+                  type="submit"
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20 transition-all shadow-sm border border-transparent active:scale-95"
+                >
+                  <span className="text-[11px] font-bold uppercase tracking-wider">Logout</span>
+                </button>
+              </form>
+            ) : (
+              <a
+                href="/login"
+                className="flex items-center gap-2 px-3 py-2 rounded-xl bg-teal-50 dark:bg-teal-500/10 text-teal-600 dark:text-teal-400 hover:bg-teal-100 dark:hover:bg-teal-500/20 transition-all shadow-sm border border-transparent active:scale-95"
+              >
+                <span className="text-[11px] font-bold uppercase tracking-wider">Login</span>
+              </a>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex items-center justify-center gap-2 text-xs font-medium text-gray-500 dark:text-gray-400/80">
+          <a 
+            href="https://muhammadshamil.vercel.app" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+          >
+            by shamil
+          </a>
+          <span className="text-[10px] opacity-50">•</span>
+          <a 
+            href="https://github.com/Shaamil777" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors flex items-center gap-1"
+          >
+            GitHub
+          </a>
+        </div>
       </div>
     </div>
   );

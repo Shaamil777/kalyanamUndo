@@ -28,11 +28,19 @@ const DISTRICT_CITIES: Record<string, string[]> = {
   "Wayanad": ["Kalpetta", "Sulthan Bathery", "Mananthavady", "Meenangadi", "Vythiri", "Panamaram"]
 };
 
-export default function AddVenueModal() {
+export default function AddVenueModal({ currentUserId }: { currentUserId: string | null }) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedDistrict, setSelectedDistrict] = useState("");
   const router = useRouter();
+
+  const handleOpen = () => {
+    if (!currentUserId) {
+      router.push('/login');
+      return;
+    }
+    setIsOpen(true);
+  };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -56,7 +64,7 @@ export default function AddVenueModal() {
   return (
     <>
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={handleOpen}
         className="fixed bottom-8 right-8 z-[1000] bg-teal-600 hover:bg-teal-500 text-white font-medium py-3.5 px-7 rounded-full shadow-[0_8px_30px_rgba(20,184,166,0.3)] transition-all duration-300 hover:scale-105 active:scale-95 border border-white/10 flex items-center gap-2"
       >
         <Plus size={20} />

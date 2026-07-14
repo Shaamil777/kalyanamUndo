@@ -2,9 +2,22 @@
 
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { auth } from '@/auth';
 
 export async function deleteWedding(id: string) {
+  const session = await auth();
+  if (!session || !session.user || !session.user.id) {
+    throw new Error('Unauthorized');
+  }
+
   try {
+    const wedding = await prisma.wedding.findUnique({ where: { id } });
+    if (!wedding) throw new Error('Wedding not found');
+    
+    if (wedding.userId !== session.user.id) {
+      throw new Error('Forbidden: You can only delete your own programs');
+    }
+
     await prisma.wedding.delete({
       where: { id }
     });
@@ -17,6 +30,11 @@ export async function deleteWedding(id: string) {
 }
 
 export async function createWedding(formData: FormData) {
+  const session = await auth();
+  if (!session || !session.user || !session.user.id) {
+    throw new Error('Unauthorized');
+  }
+
   try {
     const venueId = formData.get('venueId') as string;
     const brideName = formData.get('brideName') as string;
@@ -46,6 +64,7 @@ export async function createWedding(formData: FormData) {
         startTime,
         endTime,
         food: food || null,
+        userId: session.user.id,
       }
     });
     
